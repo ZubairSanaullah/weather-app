@@ -43,49 +43,59 @@ function App() {
       return;
     }
 
-    try {
-      // --- REAL API BLOCK (wttr.in) ---
-      const response = await fetch(`https://wttr.in/${city}?format=j1`);
-      
-      if (!response.ok) {
-        throw new Error("City not found.");
-      }
-
-      let result;
+    const fetchPromise = async () => {
       try {
-        result = await response.json();
-      } catch (e) {
-        throw new Error("City not found.");
+        // --- REAL API BLOCK (wttr.in) ---
+        const response = await fetch(`https://wttr.in/${city}?format=j1`);
+        
+        if (!response.ok) {
+          throw new Error("City not found.");
+        }
+
+        let result;
+        try {
+          result = await response.json();
+        } catch (e) {
+          throw new Error("City not found.");
+        }
+
+        if (!result.current_condition || result.current_condition.length === 0) {
+          throw new Error("City not found.");
+        }
+
+        const current = result.current_condition[0];
+        const area = result.nearest_area[0];
+
+        // Get city and country for display
+        const cityName = area.areaName[0].value;
+        const country = area.country[0].value;
+
+        // For wttr.in API, we trust that if we got a response with weather data,
+        // it's for a valid location. The API handles city name matching internally.
+        // We only reject if the response is completely invalid.
+
+        // Format data to match our WeatherCard structure
+        const data = {
+          name: `${cityName}, ${country}`,
+          main: {
+            temp: parseFloat(current.temp_C),
+            humidity: parseFloat(current.humidity),
+          },
+          weather: [{ description: current.weatherDesc[0].value }],
+          wind: { speed: (parseFloat(current.windspeedKmph) * 1000 / 3600).toFixed(1) }, // Convert km/h to m/s
+        };
+
+        setWeatherData(data);
+        // ---------------------------------------------
+      } catch (err) {
+        throw err; // Re-throw to be caught in the outer try
       }
+    };
 
-      if (!result.current_condition || result.current_condition.length === 0) {
-        throw new Error("City not found.");
-      }
+    const timerPromise = new Promise(resolve => setTimeout(resolve, 2000));
 
-      const current = result.current_condition[0];
-      const area = result.nearest_area[0];
-
-      // Get city and country for display
-      const cityName = area.areaName[0].value;
-      const country = area.country[0].value;
-
-      // For wttr.in API, we trust that if we got a response with weather data,
-      // it's for a valid location. The API handles city name matching internally.
-      // We only reject if the response is completely invalid.
-
-      // Format data to match our WeatherCard structure
-      const data = {
-        name: `${cityName}, ${country}`,
-        main: {
-          temp: parseFloat(current.temp_C),
-          humidity: parseFloat(current.humidity),
-        },
-        weather: [{ description: current.weatherDesc[0].value }],
-        wind: { speed: (parseFloat(current.windspeedKmph) * 1000 / 3600).toFixed(1) }, // Convert km/h to m/s
-      };
-
-      setWeatherData(data);
-      // ---------------------------------------------
+    try {
+      await Promise.all([fetchPromise(), timerPromise]);
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
     } finally {
