@@ -6,6 +6,19 @@ import './App.css';
 
 // We are now using wttr.in for real-time weather data which does not require an API Key!
 
+const MAJOR_CITIES = [
+  "Tokyo", "Delhi", "Shanghai", "Sao Paulo", "Mumbai", "Beijing", "Cairo", "Dhaka",
+  "Osaka", "New York", "Karachi", "Buenos Aires", "Chongqing", "Istanbul", "Kolkata",
+  "Manila", "Lagos", "Rio de Janeiro", "Tianjin", "Kinshasa", "Guangzhou", "Los Angeles",
+  "Moscow", "Shenzhen", "Lahore", "Bangalore", "Paris", "Bogota", "Jakarta", "Chennai",
+  "Lima", "Bangkok", "Seoul", "Nagoya", "Hyderabad", "London", "Tehran", "Chicago",
+  "Chengdu", "Nanjing", "Wuhan", "Ho Chi Minh City", "Luanda", "Ahmedabad", "Kuala Lumpur",
+  "Hong Kong", "Dongguan", "Foshan", "Hangzhou", "Pune", "Riyadh", "Santiago", "Madrid",
+  "Dallas", "Toronto", "Singapore", "Barcelona", "Dubai", "Sydney", "Melbourne", "Berlin",
+  "Rome", "Cape Town", "Johannesburg", "San Francisco", "Amsterdam", "Vienna", "Frankfurt",
+  "Stockholm", "Zurich", "Copenhagen", "Oslo", "Helsinki", "Dublin", "Brussels", "Munich"
+].sort();
+
 function App() {
   const [cityInput, setCityInput] = useState("");
   const [weatherData, setWeatherData] = useState(null);
@@ -19,22 +32,25 @@ function App() {
     setError(null);
     setWeatherData(null);
 
+    const normalizedInput = city.trim().toLowerCase();
+    const isValidMajorCity = MAJOR_CITIES.some(
+      (majorCity) => majorCity.toLowerCase() === normalizedInput
+    );
+
+    if (!isValidMajorCity) {
+      setError("Please enter the entire and valid name of a major city.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // --- MOCK DATA FOR DEMONSTRATION & SCREENSHOTS ---
-      // We use setTimeout to simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      if (city.toLowerCase() === "error") {
-        throw new Error("City not found");
-      }
-
-      if (city.toLowerCase() === "network") {
-        throw new Error("Network error! Please check your connection.");
-      }
-
       // --- REAL API BLOCK (wttr.in) ---
       const response = await fetch(`https://wttr.in/${city}?format=j1`);
       
+      if (!response.ok) {
+        throw new Error("City not found.");
+      }
+
       let result;
       try {
         result = await response.json();
@@ -49,9 +65,17 @@ function App() {
       const current = result.current_condition[0];
       const area = result.nearest_area[0];
 
+      // Get city and country for display
+      const cityName = area.areaName[0].value;
+      const country = area.country[0].value;
+
+      // For wttr.in API, we trust that if we got a response with weather data,
+      // it's for a valid location. The API handles city name matching internally.
+      // We only reject if the response is completely invalid.
+
       // Format data to match our WeatherCard structure
       const data = {
-        name: area.areaName[0].value,
+        name: `${cityName}, ${country}`,
         main: {
           temp: parseFloat(current.temp_C),
           humidity: parseFloat(current.humidity),
@@ -87,11 +111,17 @@ function App() {
           <input
             type="text"
             id="city-input"
-            placeholder="Enter city name..."
+            list="major-cities"
+            placeholder="Enter major city name..."
             autoComplete="off"
             value={cityInput}
             onChange={(e) => setCityInput(e.target.value)}
           />
+          <datalist id="major-cities">
+            {MAJOR_CITIES.map((majorCity) => (
+              <option key={majorCity} value={majorCity} />
+            ))}
+          </datalist>
           <button type="submit" id="search-btn">
             <svg
               viewBox="0 0 24 24"
@@ -109,7 +139,7 @@ function App() {
           </button>
         </form>
 
-        {loading && <Loader />}
+        {loading && <Loader city={cityInput} />}
         {error && !loading && <ErrorMessage message={error} />}
         {weatherData && !loading && !error && <WeatherCard data={weatherData} />}
       </main>
