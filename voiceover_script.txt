@@ -1,0 +1,13 @@
+Act as a professional software engineer giving a presentation. Write an AI voiceover script for a short video demonstrating a newly built Weather Information Dashboard. 
+
+Here are the details of the app to include in the script:
+- **Tech Stack**: React JS (bootstrapped with Vite) utilizing modern functional components and hooks (`useState`).
+- **Design Theme**: A sleek, modern dark mode (black background) with vibrant yellow accents (`#FFD700`) for a premium user experience.
+- **Code Structure**: The app is broken down into modular React components (`App`, `WeatherCard`, `Loader`, and `ErrorMessage`) for clean architecture.
+- **API Integration**: Highlight that the app fetches 100% live, real-time weather data completely free using the **wttr.in** public API, meaning it doesn't even require an API key to work!
+- **State Handling**: Highlight how the application handles three different API states smoothly:
+  1. **Loading State**: A yellow CSS spinner appears via the `<Loader />` component while asynchronous data is fetching.
+  2. **Error State**: The `<ErrorMessage />` component handles invalid cities or network failures gracefully without breaking the app.
+  3. **Success State**: When data is successfully returned, the `<WeatherCard />` component mounts and displays dynamic weather data.
+
+The tone should be professional, clear, and perfectly timed for a 1-2 minute walkthrough video. Please include bracketed cues like [Show search], [Show spinner], and [Show error message] so I can easily sync the recording.
